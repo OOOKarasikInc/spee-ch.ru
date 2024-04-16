@@ -1,0 +1,11 @@
+fastapi
+uvicorn[standard]
+alembic
+SQLAlchemy
+pytest
+psycopg2
+asyncpg
+greenlet
+pydantic
+python-multipart
+aioboto3
