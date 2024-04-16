@@ -32,16 +32,16 @@ services:
       interval: 1s
       timeout: 1s
       retries: 25
-  # backend:
-  #   environment:
-  #     S3_URL: http://minio:9000
-  #     POSTGRES_HOST: postgres
-  #   build:
-  #     dockerfile: Dockerfile
-  #   ports:
-  #     - "8000:8000"
-  #   depends_on:
-  #     minio:
-  #       condition: service_healthy
-  #     postgres:
-  #       condition: service_healthy
+  backend:
+    environment:
+      S3_URL: http://minio:9000
+      POSTGRES_HOST: postgres
+    build:
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    depends_on:
+      minio:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
