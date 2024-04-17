@@ -1,17 +1,15 @@
-from fastapi import UploadFile
-from app.db_schema import (
-    threads_table,
-    posts_table,
-    post_media_files_table,
-)
+import datetime
 import pathlib
 import typing
 import uuid
+
 import sqlalchemy
+from fastapi import UploadFile
 from sqlalchemy.dialects.postgresql import insert
-import datetime
-from app.repositories.abstract_repo import Repo
+
+from app.db_schema import post_media_files_table, posts_table, threads_table
 from app.exceptions import ThreadNotExists
+from app.repositories.abstract_repo import Repo
 
 
 class PostRepo(Repo):

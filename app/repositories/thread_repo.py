@@ -1,20 +1,22 @@
-from app.repositories.abstract_repo import Repo
-from fastapi import UploadFile
-from app.db_schema import (
-    boards_table,
-    threads_table,
-    posts_table,
-    thread_media_files_table,
-    post_media_files_table,
-)
+import datetime
 import pathlib
 import typing
 import uuid
+
 import sqlalchemy
+from fastapi import UploadFile
 from sqlalchemy import func
 from sqlalchemy.dialects.postgresql import insert
-import datetime
+
+from app.db_schema import (
+    boards_table,
+    post_media_files_table,
+    posts_table,
+    thread_media_files_table,
+    threads_table,
+)
 from app.exceptions import BoardNotExists, ThreadNotExists
+from app.repositories.abstract_repo import Repo
 
 
 class ThreadRepo(Repo):

@@ -1,6 +1,7 @@
+import sqlalchemy
+
 from app.db_schema import boards_table
 from app.repositories.abstract_repo import Repo
-import sqlalchemy
 
 
 class BoardRepo(Repo):

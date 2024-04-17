@@ -1,15 +1,15 @@
+from contextlib import asynccontextmanager
+
+import aioboto3
 import aioboto3.s3
+import botocore
 import botocore.exceptions
 from fastapi import FastAPI
-from sqlalchemy.ext.asyncio import create_async_engine
-from app.config import config
-from app.db_schema import (
-    boards_table,
-)
-import aioboto3
-from contextlib import asynccontextmanager
-import botocore
 from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy.ext.asyncio import create_async_engine
+
+from app.config import config
+from app.db_schema import boards_table
 
 resources = {
     "db_engine": create_async_engine(config.db_uri),
