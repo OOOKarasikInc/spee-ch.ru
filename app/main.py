@@ -56,12 +56,18 @@ async def get_boards() -> typing.List[Board]:
     return await board_repo.get_boards()
 
 
-@app.post("/api/v0/{board}/thread", status_code=201)
+@app.post("/api/v0/{board}/thread", status_code=201, responses=response_404)
 async def create_thread(
     board: str, files: typing.List[UploadFile], text: typing.Annotated[str, Form(...)]
 ):
     # TODO: filesize, file types
-    await thread_repo.create_thread(board, files, text)
+    try:
+        await thread_repo.create_thread(board, files, text)
+    except exceptions.BoardNotExists:
+        raise HTTPException(
+            status_code=404,
+            detail="Not found",
+        )
     return Response(status_code=status.HTTP_201_CREATED)
 
 
@@ -89,16 +95,22 @@ async def get_thread(board: str, thread_id: int) -> Thread:
     return thread
 
 
-@app.post("/api/v0/{thread_id}/post", status_code=201)
+@app.post("/api/v0/{thread_id}/post", status_code=201, responses=response_404)
 async def create_post(
     thread_id: int, files: typing.List[UploadFile], voice: UploadFile
 ):
     # TODO: filesize, file types, optional files
-    await post_repo.create_post(thread_id, files, voice)
+    try:
+        await post_repo.create_post(thread_id, files, voice)
+    except exceptions.ThreadNotExists:
+        raise HTTPException(
+            status_code=404,
+            detail="Not found",
+        )
     return Response(status_code=status.HTTP_201_CREATED)
 
 
-@app.post("/api/v0/file/{file_id}", status_code=200, responses=response_404)
+@app.get("/api/v0/file/{file_id}", status_code=200, responses=response_404)
 async def downlad_file(file_id: str):
     # TODO fix media type
     media_type = "application/octet-stream"
