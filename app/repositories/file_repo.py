@@ -8,7 +8,7 @@ class FileRepo(Repo):
         try:
             s3_file = await self.s3_client.get_object(Bucket="bucket", Key=file_id)
         except ClientError as ex:
-            if ex.response['Error']['Code'] == 'NoSuchKey':
+            if ex.response["Error"]["Code"] == "NoSuchKey":
                 raise FileNotExists
             else:
                 raise

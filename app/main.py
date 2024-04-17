@@ -50,6 +50,7 @@ response_404 = {
     404: {"details": "Not found"},
 }
 
+
 @app.get("/api/v0/board", status_code=200)
 async def get_boards() -> typing.List[Board]:
     return await board_repo.get_boards()
@@ -114,6 +115,4 @@ async def downlad_file(file_id: str):
             status_code=404,
             detail="Not found",
         )
-    return responses.StreamingResponse(
-        file_data, media_type=media_type
-    )
+    return responses.StreamingResponse(file_data, media_type=media_type)
