@@ -100,7 +100,6 @@ async def create_post(
 @app.post("/api/v0/file/{file_id}", status_code=200)
 async def downlad_file(file_id: str):
     # TODO fix media type
-    # TODO 404
     media_type = "application/octet-stream"
     if file_id.endswith(".jpeg") or file_id.endswith(".jpg"):
         media_type = "image/jpeg"
@@ -108,7 +107,13 @@ async def downlad_file(file_id: str):
         media_type = "audio/mpeg"
     elif file_id.endswith(".png"):
         media_type = "image/x-png"
-    await file_repo.download_file(file_id)
+    try:
+        file_data = await file_repo.download_file(file_id)
+    except exceptions.FileNotExists:
+        raise HTTPException(
+            status_code=404,
+            detail="Not found",
+        )
     return responses.StreamingResponse(
-        await file_repo.download_file(file_id), media_type=media_type
+        file_data, media_type=media_type
     )

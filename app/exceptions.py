@@ -4,3 +4,6 @@ class BoardNotExists(Exception):
 
 class ThreadNotExists(Exception):
     pass
+
+class FileNotExists(Exception):
+    pass
