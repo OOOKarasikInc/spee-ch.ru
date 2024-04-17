@@ -98,7 +98,7 @@ async def create_post(
     return Response(status_code=status.HTTP_201_CREATED)
 
 
-@app.post("/api/v0/file/{file_id}", status_code=200)
+@app.post("/api/v0/file/{file_id}", status_code=200, responses=response_404)
 async def downlad_file(file_id: str):
     # TODO fix media type
     media_type = "application/octet-stream"
