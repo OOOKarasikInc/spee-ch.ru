@@ -10,8 +10,10 @@ from fastapi import (
     responses,
     status,
 )
-from repositories import BoardRepo, FileRepo, PostRepo, ThreadRepo
-from resources import lifespan, resources
+
+from app import exceptions
+from app.repositories import BoardRepo, FileRepo, PostRepo, ThreadRepo
+from app.resources import lifespan, resources
 
 
 class ThreadMedia(pydantic.BaseModel):
@@ -44,6 +46,9 @@ post_repo = PostRepo(resources)
 board_repo = BoardRepo(resources)
 file_repo = FileRepo(resources)
 
+response_404 = {
+    404: {"details": "Not found"},
+}
 
 @app.get("/api/v0/board", status_code=200)
 async def get_boards() -> typing.List[Board]:
@@ -59,16 +64,27 @@ async def create_thread(
     return Response(status_code=status.HTTP_201_CREATED)
 
 
-@app.get("/api/v0/{board}/thread", status_code=200)
+@app.get("/api/v0/{board}/thread", status_code=200, responses=response_404)
 async def get_threads(board: str) -> typing.List[Thread]:
-    # TODO thread 404
-    return await thread_repo.get_threads(board)
+    try:
+        threads = await thread_repo.get_threads(board)
+    except exceptions.BoardNotExists:
+        raise HTTPException(
+            status_code=404,
+            detail="Not found",
+        )
+    return threads
 
 
-@app.get("/api/v0/{board}/thread/{thread_id}", status_code=200)
+@app.get("/api/v0/{board}/thread/{thread_id}", status_code=200, responses=response_404)
 async def get_thread(board: str, thread_id: int) -> Thread:
-    # TODO: board 404, thread 404
-    thread = await thread_repo.get_thread(board, thread_id)
+    try:
+        thread = await thread_repo.get_thread(board, thread_id)
+    except (exceptions.BoardNotExists, exceptions.ThreadNotExists):
+        raise HTTPException(
+            status_code=404,
+            detail="Not found",
+        )
     return thread
 
 
