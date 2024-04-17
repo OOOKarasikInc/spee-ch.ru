@@ -63,8 +63,8 @@ async def lifespan(app: FastAPI):
 
     boto_session = aioboto3.Session()
     s3_settings = {
-        "aws_access_key_id": "minio",
-        "aws_secret_access_key": "minio123",
+        "aws_access_key_id": config.s3_access_key_id,
+        "aws_secret_access_key": config.s3_secret_access_key,
         "endpoint_url": config.s3_url,
     }
     async with boto_session.client(service_name="s3", **s3_settings) as s3:
@@ -220,7 +220,7 @@ class PostRepo(Repo):
     async def create_post(
         self, thread_id, files: typing.List[UploadFile], voice_message: UploadFile
     ):
-        voice = str(uuid.uuid4()) + '.mp3'
+        voice = str(uuid.uuid4()) + ".mp3"
         await self.s3_client.upload_fileobj(voice_message, "bucket", voice)
 
         mediafiles = []
@@ -274,10 +274,11 @@ class BoardRepo(Repo):
             boards = (await conn.execute(get_boards_stmt)).mappings().fetchall()
         return boards
 
+
 class FileRepo(Repo):
     async def download_file(self, file_id: str):
         s3_file = await self.s3_client.get_object(Bucket="bucket", Key=file_id)
-        return s3_file['Body'].iter_chunks()
+        return s3_file["Body"].iter_chunks()
 
 
 thread_repo = ThreadRepo(resources)
@@ -321,16 +322,19 @@ async def create_post(
     await post_repo.create_post(thread_id, files, voice)
     return Response(status_code=status.HTTP_201_CREATED)
 
+
 @app.post("/api/v0/file/{file_id}", status_code=200)
 async def downlad_file(file_id: str):
     # TODO fix media type
     # TODO 404
-    media_type="application/octet-stream"
+    media_type = "application/octet-stream"
     if file_id.endswith(".jpeg") or file_id.endswith(".jpg"):
-        media_type="image/jpeg"
+        media_type = "image/jpeg"
     elif file_id.endswith(".mp3"):
-        media_type="audio/mpeg"
+        media_type = "audio/mpeg"
     elif file_id.endswith(".png"):
-        media_type="image/x-png"
+        media_type = "image/x-png"
     await file_repo.download_file(file_id)
-    return responses.StreamingResponse(await file_repo.download_file(file_id), media_type=media_type)
+    return responses.StreamingResponse(
+        await file_repo.download_file(file_id), media_type=media_type
+    )

@@ -7,5 +7,6 @@ psycopg2
 asyncpg
 greenlet
 pydantic
+pydantic-settings
 python-multipart
 aioboto3
