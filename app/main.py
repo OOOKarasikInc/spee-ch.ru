@@ -1,3 +1,4 @@
+import pathlib
 import typing
 
 import pydantic
@@ -12,6 +13,7 @@ from fastapi import (
 )
 
 from app import exceptions
+from app.config import config
 from app.repositories import BoardRepo, FileRepo, PostRepo, ThreadRepo
 from app.resources import lifespan, resources
 
@@ -39,6 +41,10 @@ class Thread(pydantic.BaseModel):
     posts: typing.List[Post]
 
 
+class HTTPError(pydantic.BaseModel):
+    detail: str
+
+
 app = FastAPI(lifespan=lifespan)
 
 thread_repo = ThreadRepo(resources)
@@ -46,9 +52,9 @@ post_repo = PostRepo(resources)
 board_repo = BoardRepo(resources)
 file_repo = FileRepo(resources)
 
-response_404 = {
-    404: {"details": "Not found"},
-}
+
+def error_responses(*codes):
+    return {code: {"model": HTTPError} for code in codes}
 
 
 @app.get("/api/v0/board", status_code=200)
@@ -56,75 +62,93 @@ async def get_boards() -> typing.List[Board]:
     return await board_repo.get_boards()
 
 
-@app.post("/api/v0/{board}/thread", status_code=201, responses=response_404)
+@app.post(
+    "/api/v0/{board}/thread",
+    status_code=201,
+    responses=error_responses(400, 404, 419),
+)
 async def create_thread(
     board: str, files: typing.List[UploadFile], text: typing.Annotated[str, Form(...)]
 ):
-    # TODO: filesize, file types
     try:
         await thread_repo.create_thread(board, files, text)
+    except exceptions.FileTypeNotSupported as exc:
+        raise HTTPException(
+            status_code=400,
+            detail=str(exc),
+        )
     except exceptions.BoardNotExists:
         raise HTTPException(
             status_code=404,
-            detail="Not found",
+            detail="Board not found",
         )
     return Response(status_code=status.HTTP_201_CREATED)
 
 
-@app.get("/api/v0/{board}/thread", status_code=200, responses=response_404)
+@app.get("/api/v0/{board}/thread", status_code=200, responses=error_responses(404))
 async def get_threads(board: str) -> typing.List[Thread]:
     try:
         threads = await thread_repo.get_threads(board)
     except exceptions.BoardNotExists:
         raise HTTPException(
             status_code=404,
-            detail="Not found",
+            detail="Board not found",
         )
     return threads
 
 
-@app.get("/api/v0/{board}/thread/{thread_id}", status_code=200, responses=response_404)
+@app.get(
+    "/api/v0/{board}/thread/{thread_id}",
+    status_code=200,
+    responses=error_responses(404),
+)
 async def get_thread(board: str, thread_id: int) -> Thread:
     try:
         thread = await thread_repo.get_thread(board, thread_id)
-    except (exceptions.BoardNotExists, exceptions.ThreadNotExists):
+    except exceptions.BoardNotExists:
         raise HTTPException(
             status_code=404,
-            detail="Not found",
+            detail="Board not found",
+        )
+    except exceptions.ThreadNotExists:
+        raise HTTPException(
+            status_code=404,
+            detail="Thread not found",
         )
     return thread
 
 
-@app.post("/api/v0/{thread_id}/post", status_code=201, responses=response_404)
+@app.post(
+    "/api/v0/{thread_id}/post",
+    status_code=201,
+    responses=error_responses(400, 404, 419),
+)
 async def create_post(
     thread_id: int, files: typing.List[UploadFile], voice: UploadFile
 ):
-    # TODO: filesize, file types, optional files
     try:
         await post_repo.create_post(thread_id, files, voice)
+    except exceptions.FileTypeNotSupported as exc:
+        raise HTTPException(
+            status_code=400,
+            detail=str(exc),
+        )
     except exceptions.ThreadNotExists:
         raise HTTPException(
             status_code=404,
-            detail="Not found",
+            detail="Thread not found",
         )
     return Response(status_code=status.HTTP_201_CREATED)
 
 
-@app.get("/api/v0/file/{file_id}", status_code=200, responses=response_404)
+@app.get("/api/v0/file/{file_id}", status_code=200, responses=error_responses(404))
 async def downlad_file(file_id: str):
-    # TODO fix media type
-    media_type = "application/octet-stream"
-    if file_id.endswith(".jpeg") or file_id.endswith(".jpg"):
-        media_type = "image/jpeg"
-    elif file_id.endswith(".mp3"):
-        media_type = "audio/mpeg"
-    elif file_id.endswith(".png"):
-        media_type = "image/x-png"
     try:
         file_data = await file_repo.download_file(file_id)
     except exceptions.FileNotExists:
         raise HTTPException(
             status_code=404,
-            detail="Not found",
+            detail="File not found",
         )
+    media_type = config.allowed_extenions[pathlib.Path(file_id).suffix[1:]]
     return responses.StreamingResponse(file_data, media_type=media_type)

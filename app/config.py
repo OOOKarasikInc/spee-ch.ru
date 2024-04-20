@@ -1,5 +1,12 @@
 import pydantic_settings
 
+ALLOWED_MEDIA_EXTENTIONS = {
+    "jpeg": "image/jpeg",
+    "jpg": "image/jpeg",
+    "png": "image/x-png",
+}
+ALLOWED_EXTENTIONS = {**ALLOWED_MEDIA_EXTENTIONS, "mp3": "audio/mpeg"}
+
 
 class Config(pydantic_settings.BaseSettings):
     postgres_host: str
@@ -16,6 +23,14 @@ class Config(pydantic_settings.BaseSettings):
     def db_uri(self):
         # TODO: escape special characters
         return f"postgresql+asyncpg://{self.postgres_user}:{self.postgres_password}@{self.postgres_host}:{self.postgres_port}/{self.postgres_db}"
+
+    @property
+    def allowed_meida_extenions(self):
+        return ALLOWED_MEDIA_EXTENTIONS
+
+    @property
+    def allowed_extenions(self):
+        return ALLOWED_EXTENTIONS
 
 
 config = Config()

@@ -8,3 +8,7 @@ class ThreadNotExists(Exception):
 
 class FileNotExists(Exception):
     pass
+
+
+class FileTypeNotSupported(Exception):
+    pass

@@ -7,8 +7,9 @@ import sqlalchemy
 from fastapi import UploadFile
 from sqlalchemy.dialects.postgresql import insert
 
+from app.config import config
 from app.db_schema import post_media_files_table, posts_table, threads_table
-from app.exceptions import ThreadNotExists
+from app.exceptions import FileTypeNotSupported, ThreadNotExists
 from app.repositories.abstract_repo import Repo
 
 
@@ -17,13 +18,20 @@ class PostRepo(Repo):
         self, thread_id, files: typing.List[UploadFile], voice_message: UploadFile
     ):
         voice = str(uuid.uuid4()) + ".mp3"
+        if pathlib.Path(voice_message.filename).suffix != ".mp3":
+            raise FileTypeNotSupported("Only mp3 voice messages supported")
         await self.s3_client.upload_fileobj(voice_message, "bucket", voice)
 
         mediafiles = []
         for f in files:
+            file_extension = pathlib.Path(f.filename).suffix[1:]
+            if file_extension not in config.allowed_meida_extenions:
+                raise FileTypeNotSupported(
+                    f"Типы поддерживаемых медиафайлов: {', '.join(config.allowed_meida_extenions)}"
+                )
             mediafiles.append(
                 {
-                    "s3_filename": str(uuid.uuid4()) + pathlib.Path(f.filename).suffix,
+                    "s3_filename": f"{str(uuid.uuid4())}.{file_extension}",
                     "filename": f.filename,
                 }
             )
